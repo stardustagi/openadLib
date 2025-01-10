@@ -52,10 +52,10 @@ func DoDelete(call func() (int64, error)) error {
 type SessionWrapper struct {
 	dao     BaseDao
 	session SessionDao
-	err     errors.StackError
+	err     error
 }
 
-type ExecuteFunc func(session SessionDao) errors.StackError
+type ExecuteFunc func(session SessionDao) *errors.StackError
 
 func NewSessionWrapper(s BaseDao) SessionWrapper {
 	sw := SessionWrapper{
@@ -63,7 +63,7 @@ func NewSessionWrapper(s BaseDao) SessionWrapper {
 		session: s.NewSession(),
 	}
 	if err := sw.session.Begin(); err != nil {
-		sw.err.e
+		sw.err = err
 	}
 	return sw
 }

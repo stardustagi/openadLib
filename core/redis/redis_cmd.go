@@ -2,8 +2,7 @@ package redis
 
 import (
 	"crypto/tls"
-	"github.com/go-redis/redis/v8"
-	"sync"
+	"github.com/redis/go-redis/v9"
 	"time"
 )
 
@@ -36,50 +35,52 @@ func NewRedisCmd(c *Config) (RedisCmd, error) {
 	}
 	if c.UseCluster {
 		return redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:              c.Addrs,
-			ReadOnly:           c.ReadOnly,
-			Password:           c.Password,
-			DialTimeout:        c.DialTimeout,
-			ReadTimeout:        c.ReadTimeout,
-			WriteTimeout:       c.WriteTimeout,
-			PoolSize:           c.PoolSize,
-			PoolTimeout:        c.PoolTimeout,
-			IdleTimeout:        c.IdleTimeout,
-			IdleCheckFrequency: c.IdleCheckFrequency,
-			TLSConfig:          c.TLSConfig,
+			Addrs:        c.Addrs,
+			ReadOnly:     c.ReadOnly,
+			Password:     c.Password,
+			DialTimeout:  c.DialTimeout,
+			ReadTimeout:  c.ReadTimeout,
+			WriteTimeout: c.WriteTimeout,
+			PoolSize:     c.PoolSize,
+			PoolTimeout:  c.PoolTimeout,
+			TLSConfig:    c.TLSConfig,
 		}), nil
 	}
 	return redis.NewClient(&redis.Options{
-		Addr:               c.Addrs[0],
-		Password:           c.Password,
-		DB:                 c.DbIndex,
-		DialTimeout:        c.DialTimeout,
-		ReadTimeout:        c.ReadTimeout,
-		WriteTimeout:       c.WriteTimeout,
-		PoolSize:           c.PoolSize,
-		PoolTimeout:        c.PoolTimeout,
-		IdleTimeout:        c.IdleTimeout,
-		IdleCheckFrequency: c.IdleCheckFrequency,
+		Addr:         c.Addrs[0],
+		Password:     c.Password,
+		DB:           c.DbIndex,
+		DialTimeout:  c.DialTimeout,
+		ReadTimeout:  c.ReadTimeout,
+		WriteTimeout: c.WriteTimeout,
+		PoolSize:     c.PoolSize,
+		PoolTimeout:  c.PoolTimeout,
 		//ReadOnly:           c.ReadOnly,
 		TLSConfig: c.TLSConfig,
 	}), nil
 }
 
-var (
-	redisCon RedisCmd
-	once     sync.Once
-)
+var redisCon RedisCmd
 
-func NewRedisCli(conf *Config) {
-	var err error
-	once.Do(func() {
-		redisCon, err = NewRedisCmd(conf)
-		if err != nil {
-			panic(err)
-		}
-	})
-}
-
-func GetRedisDb() RedisCmd {
-	return redisCon
-}
+//func init() {
+//	_redisConfig := conf.Config.Redis
+//	_conf, err := json.Marshal(_redisConfig)
+//	if err != nil {
+//		panic(err)
+//	}
+//	var redisConf Config
+//	err = json.Unmarshal(_conf, &redisConf)
+//	if _redisConfig.EnableTls {
+//		redisConf.TLSConfig = &tls.Config{
+//			InsecureSkipVerify: true,
+//		}
+//	}
+//	redisCon, err = NewRedisCmd(&redisConf)
+//	if err != nil {
+//		panic(err)
+//	}
+//}
+//
+//func GetRedisDb() RedisCmd {
+//	return redisCon
+//}

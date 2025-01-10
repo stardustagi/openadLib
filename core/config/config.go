@@ -1,29 +1,26 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/stardustagi/openadLib/core/logger"
-	"io/ioutil"
+	"github.com/stardustagi/openadLib/core/mongo"
+	"github.com/stardustagi/openadLib/core/mysql"
+	"github.com/stardustagi/openadLib/core/redis"
+	"github.com/stardustagi/openadLib/service/http_service"
 )
 
 type Config struct {
-	Logger *logger.Config `json:"logger"`
+	Logger *logger.Config       `json:"logger"`
+	MySql  *mysql.Config        `json:"mysql"`
+	Mongo  *mongo.Config        `json:"mongo"`
+	Redis  *redis.Config        `json:"redis"`
+	Http   *http_service.Config `json:"http"`
 }
 
-type GameApi struct {
-	RechargePay string `json:"recharge_pay"`
-	SignIn      string `json:"sign_in"`
-	TimeOut     int    `json:"time_out"`
-}
-
-func ParseConfig(path string) (*Config, error) {
-	content, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("ParseConfig: %s", err)
-	}
+func ParseConfig(fn string) (*Config, error) {
 	config := &Config{}
-	err = json.Unmarshal(content, config)
+	_, err := toml.DecodeFile(fn, &config)
 	if err != nil {
 		return nil, fmt.Errorf("ParseConfig: %s", err)
 	}

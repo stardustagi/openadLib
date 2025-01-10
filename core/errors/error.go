@@ -95,3 +95,7 @@ func (c *StackError) toArr(err error) []string {
 	}
 	return result
 }
+
+func (c *StackError) SetError(err error) {
+	c.err = err
+}

@@ -19,8 +19,3 @@ var ErrDeletedEmpty = errors.New("update affected 0 rows")
 var ErrInsertedEmpty = errors.New("update affected 0 rows")
 var ErrMigrateTableIDEmpty = errors.New("migrate table id nil")
 var ErrMigrateTableNameEmpty = errors.New("migrate table name nil")
-
-const (
-	SessionDoctorCommit   SessionDoctor = 0
-	SessionDoctorRollback SessionDoctor = 1
-)

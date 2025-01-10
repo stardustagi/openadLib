@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/wishicorp/sdk/helper/threadutil"
+	"github.com/stardustagi/openadLib/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +39,8 @@ type Payload struct {
 }
 
 type Notification interface {
-	PutNotification(ctx context.Context,p *Payload)
-	Subscribe(ctx context.Context,handler NotificationHandler) error
+	PutNotification(ctx context.Context, p *Payload)
+	Subscribe(ctx context.Context, handler NotificationHandler) error
 }
 
 type notification struct {
@@ -70,14 +70,14 @@ func NewNotification(node, key string, cache RedisCli, policies []time.Duration)
 	return n
 }
 
-func (n *notification) PutNotification(ctx context.Context,p *Payload) {
+func (n *notification) PutNotification(ctx context.Context, p *Payload) {
 	setKey := fmt.Sprintf("%s-%s:%s", retryKeyPrefix, n.key, p.String())
 	_ = n.cache.Set(context.Background(), setKey, []byte{1}, n.policies[p.count].String())
 }
 
 func (n *notification) lock(p *Payload) bool {
 	setKey := fmt.Sprintf("%s-%s:%s", retryKeyPrefix, n.key, p.Value)
-	value := fmt.Sprintf("%s-%d", n.node, threadutil.GetRoutineID())
+	value := fmt.Sprintf("%s-%d", n.node, utils.GetRoutineID())
 	ret, _ := n.cache.SetNX(context.Background(), setKey, []byte(value), "0")
 	if ret {
 		return ret
@@ -91,10 +91,10 @@ func (n *notification) unlock(p *Payload) {
 	p.cache.Del(context.Background(), setKey)
 }
 
-func (n *notification) Subscribe(ctx context.Context,handler NotificationHandler) error {
+func (n *notification) Subscribe(ctx context.Context, handler NotificationHandler) error {
 	skey := fmt.Sprintf("%s-%s", retryKeyPrefix, n.key)
 	space := fmt.Sprintf("__key*__:%s:%s*", n.cache.KeyPrefix(), skey)
-	psub, err := n.cache.PSubscribe(ctx,space)
+	psub, err := n.cache.PSubscribe(ctx, space)
 	if nil != err {
 		return err
 	}
@@ -120,7 +120,7 @@ func (n *notification) Subscribe(ctx context.Context,handler NotificationHandler
 				putNext := handler(payload, err)
 
 				if putNext && payload.count < int64(len(n.policies)) {
-					n.PutNotification(ctx,payload)
+					n.PutNotification(ctx, payload)
 				}
 
 				if !putNext || (putNext && payload.count >= int64(len(n.policies))) {

@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -15,13 +16,13 @@ var (
 
 type Config struct {
 	LogName       string `json:"log_name" toml:"log_name"`
-	LogPatch      string `json:"log_patch" toml:"log_patch"`
+	LogPath       string `json:"log_patch" toml:"log_path"`
 	LogLevel      string `json:"log_level" toml:"log_level"`
 	LogRotate     string `json:"log_rotate" toml:"log_rotate"`
 	LogRotateSize int64  `json:"log_rotate_size" toml:"log_rotate_size"`
 }
 
-func NewLogger(conf Config) {
+func SetupLogger(conf Config) {
 	once.Do(func() {
 		var fileOption []FileOption
 		switch RotatePolicy(conf.LogRotate) {
@@ -37,7 +38,7 @@ func NewLogger(conf Config) {
 		fileOption = append(fileOption, WithRotateSizeMB(conf.LogRotateSize))
 		var fw *FileWriter
 		var err error
-		if fw, err = NewFileWriter(conf.LogPatch, fileOption...); err != nil {
+		if fw, err = NewFileWriter(filepath.Join(conf.LogPath, conf.LogName), fileOption...); err != nil {
 			fmt.Printf("Error creating file writer: %s", err.Error())
 		}
 
@@ -51,8 +52,6 @@ func NewLogger(conf Config) {
 			AdditionalLocationOffset: 1,
 			JSONFormat:               true,
 			JSONEscapeDisabled:       true,
-			//Color:                hclog.AutoColor,
-			//ColorHeaderAndFields: true,
 		})
 		logger.SetLevel(hclog.LevelFromString(conf.LogLevel))
 	})

@@ -1,14 +1,12 @@
 package mysql
 
 import (
-	"ad_server/conf"
-	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/go-hclog"
 	_ "github.com/lib/pq"
 	"log"
-	"os"
+	"sync"
 	"xorm.io/core"
 	"xorm.io/xorm"
 )
@@ -18,22 +16,7 @@ type DBInterface interface {
 	xorm.EngineInterface
 }
 
-func NewConn(c *Config, logFile string) (DBInterface, error) {
-	var logger hclog.Logger
-	if logFile != "" {
-		logFn, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err != nil {
-			log.Fatalln("open file error !")
-			return nil, err
-		}
-		logger = hclog.New(&hclog.LoggerOptions{
-			Name:   conf.Config.Global.AppName,
-			Level:  hclog.LevelFromString("DEBUG"),
-			Output: logFn,
-		})
-	} else {
-		logger = hclog.Default()
-	}
+func NewConn(c *Config, logger hclog.Logger) (DBInterface, error) {
 	if c.UseMasterSlave {
 		return NewMSConn(c, logger)
 	}
@@ -109,20 +92,19 @@ func NewMSConn(c *Config, logger hclog.Logger) (DBInterface, error) {
 	return group, nil
 }
 
-var dbConn DBInterface
+var (
+	dbConn DBInterface
+	once   sync.Once
+)
 
-func init() {
-	_conf, err := json.Marshal(conf.Config.Mysql)
-	if err != nil {
-		panic(err)
-	}
-	var dbConfig Config
-	err = json.Unmarshal(_conf, &dbConfig)
-	if err != nil {
-		panic(err)
-	}
-	dbConfig.ShowSql = true
-	dbConn, _ = NewConn(&dbConfig, conf.Config.Mysql.LogFile)
+func SetupMysql(conf *Config, log hclog.Logger) {
+	once.Do(func() {
+		var err error
+		dbConn, err = NewConn(conf, log)
+		if err != nil {
+			panic(err)
+		}
+	})
 }
 
 func GetMySqlDB() DBInterface {
